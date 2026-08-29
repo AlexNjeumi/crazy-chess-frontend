@@ -1,0 +1,26 @@
+{
+    "name": "crazy_chess_frontend",
+    "version": "0.1.0",
+    "private": true,
+    "dependencies": {
+        "@emotion/react": "^11.14.0",
+        "@emotion/styled": "^11.14.1",
+        "@mui/icons-material": "^9.0.0",
+        "@mui/material": "^9.0.0",
+        "@xyflow/react": "^12.11.0",
+        "axios": "^1.15.2",
+        "next": "16.2.6",
+        "react": "^19.2.8",
+        "react-dom": "^19.2.8"
+    },
+    "scripts": {
+        "dev": "next dev",
+        "build": "next build",
+        "start": "next start"
+    },
+    "devDependencies": {
+        "@types/node": "26.4.0",
+        "@types/react": "19.2.18",
+        "typescript": "7.0.2"
+    }
+}
