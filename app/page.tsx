@@ -1,24 +1,11 @@
 "use client"; // <--- Add this exact string as line 1
 import { Icon } from './components/Icon';
-
+import { chessApi, Square } from './api/api';
 import React, { useState } from 'react';
-import {Grid, Typography, Stack, Button, Accordion} from '@mui/material';
+import {Grid, Typography, Stack, Button, Accordion, Modal, CircularProgress} from '@mui/material';
 import { initialBoard } from './components/initialBoard';
 
-interface Piece {
-    type: string;
-    team: string;
-    effects: string[];
-}
 
-interface Square {
-    piece: Piece | null;
-    effects: string[];
-}
-
-// interface Board {
-//     squares: Square[][];
-// }
 export function DrawBoard({
   squares,
   rows = 8,
@@ -85,14 +72,77 @@ export function DrawBoard({
   );
 }
 
-interface Task {
-  id: number;
-  title: string;
-  isDone: boolean;
-}
 
 
+// function NewGamePanel({})
+// New Game Panel needs to popup. Needs to set the number of rows, columns, what effects to choose from and how many.
+
+// unction DrawBoard({
+//   squares,
+//   rows = 8,
+//   columns = 8,
+// }: {
+//   squares: Square[][];
+//   rows?: number;
+//   columns?: number;
+// }) {
+//   return (
 export default function Page() {
+ 
+    const [numRows, setNumRows] = React.useState<number>(8);
+    const [numColumns, setNumColumns] = React.useState<number>(8);
+    const [numEffects, setNumEffects] = React.useState<number>(3);
+    const [open, setOpen] = React.useState<boolean>(false);
+
+    const [gameId, setGameId] = useState<number | null>(null);
+  const [boardState, setBoardState] = useState<Square[][]>([]);
+  const [activeEffects, setActiveEffects] = useState<string[]>([]);
+  const [legalMoves, setLegalMoves] = useState<[number, number][]>([]);
+
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const handleStartGame = async () => {
+    setLoading(true);
+    try {
+      const data = await chessApi.createNewGame({
+        rows: numRows,
+        columns: numColumns,
+        num_effects: numEffects,
+        effects: ['freeze', 'double_jump', 'teleport'],
+      });
+
+      setGameId(data.game_id);
+      setBoardState(data.board_state);
+      setActiveEffects(data.effects);
+      setOpen(false);
+    } catch (err) {
+      console.error('Error creating new game:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSquareClick = async (row: number, col: number) => {
+    if (!gameId) return;
+    try {
+      const data = await chessApi.getLegalMoves(gameId, row, col);
+      setLegalMoves(data.legal_moves);
+    } catch (err) {
+      console.error('Error fetching legal moves:', err);
+    }
+  };
+
+  const handleRefreshBoard = async () => {
+    if (!gameId) return;
+    try {
+      const data = await chessApi.getBoardState(gameId);
+      setBoardState(data.board_state);
+    } catch (err) {
+      console.error('Error fetching board state:', err);
+    }
+  };
+    // need to fetch the effects from the backend
+
   return (
     <Stack direction='row'>
       
@@ -104,81 +154,36 @@ export default function Page() {
         <DrawBoard squares={initialBoard} />
       </Stack>
       <Stack direction="column" style={{  alignItems: "flex-start", marginLeft: "20px" }} spacing={2}>
-      <Button variant="contained" >New Game</Button>
+      <Button variant="contained" onClick={() => setOpen(true)}>New Game</Button>
       <Button variant="contained">View powerups</Button>
       <Button variant="contained">View Leaderboard</Button>
       </Stack>
 
+      <Modal open={open} onClose={() => setOpen(false)} style={{left: '40%', top: '25%', position: 'absolute'}}> 
+        <Stack style={{ width: '30%', height: '400px', backgroundColor: 'white', padding: '20px'}}>
+          <Typography className="text-2xl font-bold text-black mb-4">New Game Settings</Typography>
+          <Stack direction="column" spacing={2}>
+            <label>
+              Number of Rows:
+              <input type="number" value={numRows} onChange={(e) => setNumRows(Number(e.target.value))} />
+            </label>
+            <label>
+              Number of Columns:
+              <input type="number" value={numColumns} onChange={(e) => setNumColumns(Number(e.target.value))} />
+            </label>
+            <label>
+              Number of Effects:
+              <input type="number" value={numEffects} onChange={(e) => setNumEffects(Number(e.target.value))} />
+            </label>
+      <Button variant="contained" onClick={handleStartGame} disabled={loading}>
+            {loading ? <CircularProgress size={24} /> : 'Start Game'}
+      </Button>
+
+          </Stack>
+        </Stack>
+      </Modal>
+
+
     </Stack>
   );
 }
-
-// const App: React.FC = () => {
-//   const [tasks, setTasks] = useState<Task[]>([
-//     { id: 1, title: 'Take out the trash', isDone: false },
-//     { id: 2, title: 'Do the dishes', isDone: false },
-//   ]);
-//   const [newTaskTitle, setNewTaskTitle] = useState<string>('');
-
-//   const handleCheckboxClick = (id: number) => {
-//     setTasks(
-//       tasks.map(task => {
-//         if (task.id === id) {
-//           return { ...task, isDone: !task.isDone };
-//         }
-//         return task;
-//       }),
-//     );
-//   };
-
-//   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-//     setNewTaskTitle(event.target.value);
-//   };
-
-//   const handleAddTask = () => {
-//     setTasks([...tasks, { id: tasks.length + 1, title: newTaskTitle, isDone: false }]);
-//     setNewTaskTitle('');
-//   };
-
-//   const handleDeleteTask = (id: number) => {
-//     setTasks(tasks.filter(task => task.id !== id));
-//   };
-
-//   interface IconProps {
-//   color?: string;
-//   size?: number;
-// }
-
-
-//   return (
-//     <div>
-//       <h1>My To-Do List</h1>
-//       <ul>
-//         {tasks.map(task => (
-//           <li key={task.id}>
-//             <input
-//               type="checkbox"
-//               checked={task.isDone}
-//               onChange={() => handleCheckboxClick(task.id)}
-//             />
-//             <span style={{ textDecoration: task.isDone ? 'line-through' : 'none' }}>
-//               {task.title}
-//             </span>
-//             <button onClick={() => handleDeleteTask(task.id)}>Delete</button>
-//           </li>
-//         ))}
-//       </ul>
-//       <div>
-//         <input type="text" value={newTaskTitle} onChange={handleInputChange} />
-//         <button onClick={handleAddTask}>Add Task</button>
-//       </div>
-//       <Icon name="queen" size={800} className="invert"/>
-//       <Icon name="queen" className="drop-shadow-[0_0_0_rgba(255,0,0,1)]" />
- 
-    
-//     </div>
-//   );
-// };
-
-
-
