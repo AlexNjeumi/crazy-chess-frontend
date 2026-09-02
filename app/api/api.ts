@@ -27,51 +27,88 @@ export interface NewGameResponse {
 
 export const chessApi = {
   // POST: Form payload sent via body
-  async createNewGame(params: NewGameParams): Promise<NewGameResponse> {
-    const formData = new FormData();
-    formData.append('rows', params.rows.toString());
-    formData.append('columns', params.columns.toString());
-    formData.append('num_effects', params.num_effects.toString());
-    params.effects.forEach((effect) => formData.append('effects', effect));
-
+async createNewGame(params: NewGameParams): Promise<NewGameResponse> {
     const res = await fetch(`${BASE_URL}/new-game`, {
       method: 'POST',
-      body: formData,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        rows: Number(params.rows),
+        columns: Number(params.columns),
+        num_effects: Number(params.num_effects),
+        effects: params.effects,
+      }),
     });
 
-    if (!res.ok) throw new Error('Failed to create new game');
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => null);
+      console.error('API Error Response:', errorData);
+      throw new Error('Failed to create new game');
+    }
+
     return res.json();
   },
 
   // GET: URL Query parameter
   async getEffects(gameId: number): Promise<string[]> {
-    const url = `${BASE_URL}/get-effects?game_id=${encodeURIComponent(gameId)}`;
-    const res = await fetch(url, { method: 'GET' });
+const res = await fetch(`${BASE_URL}/get-effects/${gameId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
 
-    if (!res.ok) throw new Error('Failed to fetch effects');
-    return res.json();
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => null);
+      console.error('API Error Response:', errorData);
+      throw new Error('Failed to get effects');
+    }
+
+// const data = await res.json();
+  
+  // return data.effects ?? data;
+  return res.json();
+
   },
 
-  // GET: Tuple passed as query params or JSON array string
-  async getLegalMoves(gameId: number, row: number, col: number): Promise<{ legal_moves: [number, number][] }> {
-    const url = new URL(`${BASE_URL}/legal-moves`, window.location.origin);
-    url.searchParams.append('game_id', gameId.toString());
-    // Sends repeated position params to match FastAPI tuple expectation: ?position=0&position=1
-    url.searchParams.append('position', row.toString());
-    url.searchParams.append('position', col.toString());
+async getLegalMoves(gameId: number, row: number, col: number): Promise<{ legal_moves: [number, number][] }> {
+  const query = new URLSearchParams({
+    game_id: gameId.toString(),
+    row: row.toString(),
+    col: col.toString(),
+  }).toString();
 
-    const res = await fetch(url.toString(), { method: 'GET' });
+  const res = await fetch(`${BASE_URL}/legal-moves?${query}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 
-    if (!res.ok) throw new Error('Failed to fetch legal moves');
-    return res.json();
-  },
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    console.error('API Error Response:', errorData);
+    throw new Error(`Failed to fetch legal moves for piece at (${row}, ${col})`);
+  }
+
+  return res.json();
+},
 
   // GET: URL Query parameter
   async getBoardState(gameId: number): Promise<{ board_state: Square[][] }> {
-    const url = `${BASE_URL}/get-board-state?game_id=${encodeURIComponent(gameId)}`;
-    const res = await fetch(url, { method: 'GET' });
+    const res = await fetch(`${BASE_URL}/get-board-state/${gameId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
 
-    if (!res.ok) throw new Error('Failed to fetch board state');
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => null);
+      console.error('API Error Response:', errorData);
+      throw new Error('Failed to create new game');
+    }
+
     return res.json();
-  },
-};
+  }}

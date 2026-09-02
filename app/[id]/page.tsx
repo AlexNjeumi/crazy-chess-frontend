@@ -1,11 +1,12 @@
 "use client"; // <--- Add this exact string as line 1
-import { Icon } from './components/Icon';
-import { chessApi, Square } from './api/api';
+import { Icon } from '../components/Icon';
+import { chessApi, Square } from '../api/api';
 import React, { useState } from 'react';
 import {Grid, Typography, Stack, Button, Accordion, Modal, CircularProgress} from '@mui/material';
-import { initialBoard } from './components/initialBoard';
+import { initialBoard } from '../components/initialBoard';
 import { useRouter, useParams, useSearchParams } from "next/navigation";
-import MatchModal, { Match } from './components/MatchesModal';
+
+
 export function DrawBoard({
   squares,
   rows = 8,
@@ -72,58 +73,33 @@ export function DrawBoard({
   );
 }
 
+// needs to load the board when directed here, 
+// update the board when a piece is moved, and show the legal moves and effects when a piece is clicked.
+// update the board when an effect is used
+
+// function NewGamePanel({})
+// New Game Panel needs to popup. Needs to set the number of rows, columns, what effects to choose from and how many.
+
 
 export default function Page() {
  
   const router = useRouter();
-    const [numRows, setNumRows] = React.useState<number>(8);
-    const [numColumns, setNumColumns] = React.useState<number>(8);
-    const [numEffects, setNumEffects] = React.useState<number>(3);
-    const [open, setOpen] = React.useState<boolean>(false);
-    const [openMatchesModal, setOpenMatchesModal] = React.useState<boolean>(false);
-
-    const [gameId, setGameId] = useState<number | null>(null);
+  
+  const [oldYPos, setOldYPos] = React.useState<number>(8);
+  const [newYPos, setNewYPos] = React.useState<number>(8);
+  const [oldXPos, setOldXPos] = React.useState<number>(8);
+  const [newXPos, setNewXPos] = React.useState<number>(8);
+  const [selectedEffect, setSelectedEffect] = React.useState<string>("");
+  const [gameId, setGameId] = useState<number | null>(null);
   const [boardState, setBoardState] = useState<Square[][]>([]);
   const [activeEffects, setActiveEffects] = useState<string[]>([]);
   const [legalMoves, setLegalMoves] = useState<[number, number][]>([]);
-  const [matches, setMatches] = useState<Match[]>([]);
+
   const [loading, setLoading] = useState<boolean>(false);
 
-  const handleStartGame = async () => {
-    setLoading(true);
-    try {
-      const data = await chessApi.createNewGame({
-        rows: numRows,
-        columns: numColumns,
-        num_effects: numEffects,
-        effects: ['freeze', 'double_jump', 'teleport'],
-      });
+  const handleExitGame = async () => {
+      router.push(`/`); 
 
-      router.push(`/${data.game_id}`); 
-
-      setOpen(false);
-    } catch (err) {
-      console.error('Error creating new game:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-const handleOpenMatches = async () => {
-    setLoading(true);
-    try {
-      const data = await chessApi.getMatches();
-      setMatches(data);
-      setOpenMatchesModal(true);
-    } catch (error) {
-      console.error('Failed to load matches:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSelectMatch = (matchId: number) => {
-    router.push(`/game/${matchId}`);
   };
 
   const handleSquareClick = async (row: number, col: number) => {
@@ -158,49 +134,10 @@ const handleOpenMatches = async () => {
         <DrawBoard squares={initialBoard} />
       </Stack>
       <Stack direction="column" style={{  alignItems: "flex-start", marginLeft: "20px" }} spacing={2}>
-      <Button variant="contained" onClick={() => setOpen(true)}>New Game</Button>
-      <Button variant="contained">View Matches</Button>
+      <Button variant="contained" onClick={handleExitGame}>Exit Game</Button>
       <Button variant="contained">View powerups</Button>
-      <Button variant="contained">View Leaderboard</Button>
       </Stack>
 
-      <Modal open={open} onClose={() => setOpen(false)} style={{left: '40%', top: '25%', position: 'absolute'}}> 
-        <Stack style={{ width: '30%', height: '400px', backgroundColor: 'white', padding: '20px'}}>
-          <Typography className="text-2xl font-bold text-black mb-4">New Game Settings</Typography>
-          <Stack direction="column" spacing={2}>
-            <label>
-              Number of Rows:
-              <input type="number" value={numRows} onChange={(e) => setNumRows(Number(e.target.value))} />
-            </label>
-            <label>
-              Number of Columns:
-              <input type="number" value={numColumns} onChange={(e) => setNumColumns(Number(e.target.value))} />
-            </label>
-            <label>
-              Number of Effects:
-              <input type="number" value={numEffects} onChange={(e) => setNumEffects(Number(e.target.value))} />
-            </label>
-      <Button variant="contained" onClick={handleStartGame} disabled={loading}>
-            {loading ? <CircularProgress size={24} /> : 'Start Game'}
-      </Button>
-
-          </Stack>
-        </Stack>
-      </Modal>
-      <Button 
-        variant="contained" 
-        onClick={handleOpenMatches}
-        disabled={loading}
-      >
-        {loading ? 'Loading...' : 'View Matches'}
-      </Button>
-
-      <MatchModal
-        open={openMatchesModal}
-        onClose={() => setOpenMatchesModal(false)}
-        matches={matches}
-        onSelectMatch={handleSelectMatch}
-      />
 
 
     </Stack>
