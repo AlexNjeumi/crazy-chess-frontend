@@ -2,7 +2,7 @@
 import { Icon } from './components/Icon';
 import { chessApi, Square } from './api/api';
 import React, { useState } from 'react';
-import {Grid, Typography, Stack, Button, Accordion, Modal, CircularProgress} from '@mui/material';
+import {Grid, Typography, Stack, Button, Accordion, Modal, CircularProgress, TextField} from '@mui/material';
 import { initialBoard } from './components/initialBoard';
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import MatchModal, { Match } from './components/MatchesModal';
@@ -46,8 +46,8 @@ export function DrawBoard({
               }}
             >
               {/* Piece Icon (if present) */}
-              {square.piece ? (
-                <Icon name={square.piece.type} size={40} />
+              {square.piece_type ? (
+                <Icon name={square.piece_type} size={40} />
               ) : null}
 
               {/* Coordinate label placed in the corner */}
@@ -82,7 +82,9 @@ export default function Page() {
     const [open, setOpen] = React.useState<boolean>(false);
     const [openMatchesModal, setOpenMatchesModal] = React.useState<boolean>(false);
 
-    const [gameId, setGameId] = useState<number | null>(null);
+  const [gameId, setGameId] = useState<number | null>(null);
+  const [player1, setPlayer1] = useState<string>('');
+  const [player2, setPlayer2] = useState<string>('');
   const [boardState, setBoardState] = useState<Square[][]>([]);
   const [activeEffects, setActiveEffects] = useState<string[]>([]);
   const [legalMoves, setLegalMoves] = useState<[number, number][]>([]);
@@ -97,6 +99,8 @@ export default function Page() {
         columns: numColumns,
         num_effects: numEffects,
         effects: ['freeze', 'double_jump', 'teleport'],
+        player1: player1,
+        player2: player2
       });
 
       router.push(`/${data.game_id}`); 
@@ -123,7 +127,7 @@ const handleOpenMatches = async () => {
   };
 
   const handleSelectMatch = (matchId: number) => {
-    router.push(`/game/${matchId}`);
+    router.push(`/${matchId}`); 
   };
 
   const handleSquareClick = async (row: number, col: number) => {
@@ -159,15 +163,38 @@ const handleOpenMatches = async () => {
       </Stack>
       <Stack direction="column" style={{  alignItems: "flex-start", marginLeft: "20px" }} spacing={2}>
       <Button variant="contained" onClick={() => setOpen(true)}>New Game</Button>
-      <Button variant="contained">View Matches</Button>
       <Button variant="contained">View powerups</Button>
       <Button variant="contained">View Leaderboard</Button>
+      <Button 
+        variant="contained" 
+        onClick={handleOpenMatches}
+        disabled={loading}
+      >
+        {loading ? 'Loading...' : 'View Matches'}
+      </Button>
       </Stack>
 
       <Modal open={open} onClose={() => setOpen(false)} style={{left: '40%', top: '25%', position: 'absolute'}}> 
         <Stack style={{ width: '30%', height: '400px', backgroundColor: 'white', padding: '20px'}}>
           <Typography className="text-2xl font-bold text-black mb-4">New Game Settings</Typography>
           <Stack direction="column" spacing={2}>
+            <TextField
+        label="Player 1 Name (White)"
+        variant="outlined"
+        size="small"
+        fullWidth
+        value={player1}
+        onChange={(e) => setPlayer1(e.target.value)}
+      />
+
+      <TextField
+        label="Player 2 Name (Black)"
+        variant="outlined"
+        size="small"
+        fullWidth
+        value={player2}
+        onChange={(e) => setPlayer2(e.target.value)}
+      />
             <label>
               Number of Rows:
               <input type="number" value={numRows} onChange={(e) => setNumRows(Number(e.target.value))} />
@@ -187,13 +214,7 @@ const handleOpenMatches = async () => {
           </Stack>
         </Stack>
       </Modal>
-      <Button 
-        variant="contained" 
-        onClick={handleOpenMatches}
-        disabled={loading}
-      >
-        {loading ? 'Loading...' : 'View Matches'}
-      </Button>
+
 
       <MatchModal
         open={openMatchesModal}
@@ -201,6 +222,8 @@ const handleOpenMatches = async () => {
         matches={matches}
         onSelectMatch={handleSelectMatch}
       />
+        
+
 
 
     </Stack>

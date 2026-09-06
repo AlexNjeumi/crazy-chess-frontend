@@ -1,15 +1,15 @@
 // lib/api.ts
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/crazy-chess';
 
-export interface Piece {
-  type: string;
-  team: string;
-  effects: string[];
-}
+
 
 export interface Square {
-  piece: Piece | null;
-  effects: string[];
+  piece_type: string | null;
+  square_effects: string[];
+  piece_effects: string[];
+  team: string | null;
+  row: number;
+  col: number;
 }
 
 export interface NewGameParams {
@@ -17,6 +17,9 @@ export interface NewGameParams {
   columns: number;
   num_effects: number;
   effects: string[];
+  player1: string;
+  player2: string;
+
 }
 
 export interface NewGameResponse {
@@ -24,6 +27,17 @@ export interface NewGameResponse {
   board_state: Square[][];
   effects: string[];
 }
+
+export interface Match {
+  match_id: number;
+  player1: string;
+  player2: string;
+  status: string;
+  winner: string | null;
+  date: string;
+
+}
+
 
 export const chessApi = {
   // POST: Form payload sent via body
@@ -38,6 +52,8 @@ async createNewGame(params: NewGameParams): Promise<NewGameResponse> {
         columns: Number(params.columns),
         num_effects: Number(params.num_effects),
         effects: params.effects,
+        player1: params.player1,
+        player2: params.player2,
       }),
     });
 
@@ -111,4 +127,18 @@ async getLegalMoves(gameId: number, row: number, col: number): Promise<{ legal_m
     }
 
     return res.json();
-  }}
+  },
+
+async getMatches(): Promise<Match[]> {
+  const res = await fetch(`${BASE_URL}/get-matches`, {
+    method: 'GET',
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    console.error('API Error Response:', errorData);
+    throw new Error('Failed to retrieve matches');
+  }
+
+  return res.json();
+}}
